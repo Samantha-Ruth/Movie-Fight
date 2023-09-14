@@ -1,41 +1,74 @@
-// Fetching movie data
-// Network request using AXIOS
+// Fetch movie data
 const fetchData = async (searchTerm) => {
   const response = await axios.get("http://www.omdbapi.com/", {
+    // use Axios to enter key and parameters
     params: {
       apikey: "",
       s: searchTerm,
       // i: 'tt0848228'
     },
   });
-  console.log(response.data);
+
+  if (response.data.Error) {
+    return []
+  }
+
+  return (response.data.Search);
 };
 
-// API key: http://www.omdbapi.com/?i=tt3896198&apikey=487df51d
-// URL: http://www.omdbapi.com/?apikey=[yourkey]&
-// parameters: s (interpreted as movie title we are searching for)
+const root = document.querySelector(".autocomplete");
+root.innerHTML = `
+    <label><b>Search for a Movie</b><label>
+    <input class="input" />
+    <div class="dropdown">
+        <div class="dropdown-menu">
+          <div class="dropdown-content results"> </div>
+          </div>
+        </div>
+`;
 
-// fetching single movie
+const input = document.querySelector('input');
+const dropdown = document.querySelector('.dropdown');
+const resultsWrapper = document.querySelector('.results');
 
-// Autocomplete Widget design
 
-const input = document.querySelector("input");
-
-//wrapper function that restricts calls to onInput, but returns a function as well
-// creating a re-usable debounce helper function
-const debounce = (func, delay = 500) => {
-  let timeoutId;
-  return (...args) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+const onInput = async event => {
+    const movies = await fetchData(event.target.value);
+    // removes dropdown if no movies are entered
+    if (!movies.length) {
+        dropdown.classList.remove('is-active');
+        return;
     }
-    timeoutId = setTimeout(() => {
-      func.apply(null, args);
-    }, delay);
-  };
+
+    // clear input
+    resultsWrapper.innerHTML = '';
+
+    // create dropdown to display all movies and images
+    dropdown.classList.add('is-active');
+    // iterate over all movies and display poster and titles
+    for(let movie of movies) {
+        const option = document.createElement('a');
+        // if image doesn't exist, don't show it
+        const imgSrc = movie.Poster === 'N/A' ? '' : movie.Poster;
+        // create a dropdown item
+        option.classList.add('dropdown-item');
+        // display movie posters an dtitles
+        option.innerHTML = `
+            <img src="${imgSrc}" />
+            ${movie.Title}
+            `;
+            resultsWrapper.appendChild(option);
+    };
 };
 
-const onInput = debounce((event) => {
-  fetchData(event.target.value);
+
+
+
+input.addEventListener("input", debounce(onInput, 500));
+
+// closes dropdown when user clicks outside of dropdown
+document.addEventListener('click', event => {
+    if(!root.contains(event.target)){
+        dropdown.classList.remove('is-active');
+    }
 });
-input.addEventListener("input", onInput);
