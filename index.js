@@ -1,74 +1,82 @@
 // Fetch movie data
-const fetchData = async (searchTerm) => {
+createAutoComplete({
+  root: document.querySelector(".autocomplete"),
+  renderOption(movie) {
+    const imgSrc = movie.Poster === "N/A" ? "" : movie.Poster;
+    return `
+    <img src="${imgSrc}" />
+    ${movie.Title}
+    (${movie.Year})
+    `;
+  },
+  onOptionSelect(movie) {
+    onMovieSelect(movie);
+  },
+  inputValue(movie) {
+    return movie.Title;
+  },
+  async fetchData(searchTerm) {
+    const response = await axios.get("http://www.omdbapi.com/", {
+      // use Axios to enter key and parameters
+      params: {
+        apikey: "",
+        s: searchTerm,
+        // i: 'tt0848228'
+      },
+    });
+    if (response.data.Error) {
+      return [];
+    }
+    return response.data.Search;
+  },
+});
+
+const onMovieSelect = async (movie) => {
   const response = await axios.get("http://www.omdbapi.com/", {
     // use Axios to enter key and parameters
     params: {
-      apikey: "",
-      s: searchTerm,
-      // i: 'tt0848228'
+      apikey: "487df51d",
+      i: movie.imdbID,
     },
   });
-
-  if (response.data.Error) {
-    return []
-  }
-
-  return (response.data.Search);
+  document.querySelector("#summary").innerHTML = movieTemplate(response.data);
 };
 
-const root = document.querySelector(".autocomplete");
-root.innerHTML = `
-    <label><b>Search for a Movie</b><label>
-    <input class="input" />
-    <div class="dropdown">
-        <div class="dropdown-menu">
-          <div class="dropdown-content results"> </div>
+const movieTemplate = (movieDetail) => {
+  return `
+      <article class="media"> 
+          <figure class="media-left">
+              <p class="image">
+                  <img src="${movieDetail.Poster}" />
+              </p>
+          </figure>
+          <div class="media-content">
+              <div class="content">
+                  <h1>${movieDetail.Title}</h1>
+                  <h4>${movieDetail.Genre}</h4>
+                  <p>${movieDetail.Plot}</p>
+              </div>
           </div>
-        </div>
-`;
-
-const input = document.querySelector('input');
-const dropdown = document.querySelector('.dropdown');
-const resultsWrapper = document.querySelector('.results');
-
-
-const onInput = async event => {
-    const movies = await fetchData(event.target.value);
-    // removes dropdown if no movies are entered
-    if (!movies.length) {
-        dropdown.classList.remove('is-active');
-        return;
-    }
-
-    // clear input
-    resultsWrapper.innerHTML = '';
-
-    // create dropdown to display all movies and images
-    dropdown.classList.add('is-active');
-    // iterate over all movies and display poster and titles
-    for(let movie of movies) {
-        const option = document.createElement('a');
-        // if image doesn't exist, don't show it
-        const imgSrc = movie.Poster === 'N/A' ? '' : movie.Poster;
-        // create a dropdown item
-        option.classList.add('dropdown-item');
-        // display movie posters an dtitles
-        option.innerHTML = `
-            <img src="${imgSrc}" />
-            ${movie.Title}
-            `;
-            resultsWrapper.appendChild(option);
-    };
+      </article>
+      <article class="notification is=primary>
+          <p class="title">${movieDetail.Awards}</p>
+          <p class="subtitle">Awards</p>
+      </article>
+          <article class="notification is=primary>
+          <p class="title">${movieDetail.BoxOffice}</p>
+          <p class="subtitle">BoxOffice</p>
+      </article>
+          <article class="notification is=primary>
+          <p class="title">${movieDetail.Metascore}</p>
+      <p class="subtitle">Metascore</p>
+      </article>
+      <article class="notification is=primary>
+          <p class="title">${movieDetail.imdbRating}</p>
+          <p class="subtitle">IMBD Rating</p>
+      </article>
+      <article class="notification is=primary>
+          <p class="title">${movieDetail.imdbVotes}</p>
+          <p class="subtitle">IMBD Votes</p>
+      </article>
+      `;
 };
-
-
-
-
-input.addEventListener("input", debounce(onInput, 500));
-
-// closes dropdown when user clicks outside of dropdown
-document.addEventListener('click', event => {
-    if(!root.contains(event.target)){
-        dropdown.classList.remove('is-active');
-    }
-});
