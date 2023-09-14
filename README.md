@@ -1,5 +1,5 @@
 # Movie-Fight
-Comparison across two movies.
+Choose two movies and get a comparison of box office totals and IMBD ratings between the two.
 
 Challenges of this project: 
 
